@@ -10,9 +10,11 @@ import java.util.Optional;
 @Repository
 public interface TableDefinitionRepository extends JpaRepository<TableDefinition, Long> {
 
-    List<TableDefinition> findByDatabaseModelId(Long databaseModelId);
+    List<TableDefinition> findBySchemaId(Long schemaId);
 
-    Optional<TableDefinition> findByDatabaseModelIdAndSchemaNameAndName(Long databaseModelId, String schemaName, String name);
+    List<TableDefinition> findBySchema_DatabaseModel_Id(Long databaseModelId);
 
-    boolean existsByDatabaseModelIdAndSchemaNameAndName(Long databaseModelId, String schemaName, String name);
+    Optional<TableDefinition> findBySchemaIdAndName(Long schemaId, String name);
+
+    boolean existsBySchemaIdAndName(Long schemaId, String name);
 }

@@ -15,7 +15,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "table_definitions",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"database_model_id", "schema_name", "name"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"schema_id", "name"}))
 @Data
 @Builder
 @NoArgsConstructor
@@ -30,15 +30,12 @@ public class TableDefinition {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "schema_name")
-    private String schemaName;
-
     @Column(length = 1000)
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "database_model_id", nullable = false)
-    private DatabaseModel databaseModel;
+    @JoinColumn(name = "schema_id", nullable = false)
+    private SchemaDefinition schema;
 
     @OneToMany(mappedBy = "table", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

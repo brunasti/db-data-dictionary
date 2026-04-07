@@ -1,6 +1,5 @@
 package it.brunasti.dbdadi.model;
 
-import it.brunasti.dbdadi.model.enums.DbType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -15,33 +14,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "database_models")
+@Table(name = "schema_definitions",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"database_model_id", "name"}))
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DatabaseModel {
+public class SchemaDefinition {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String name;
 
     @Column(length = 1000)
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private DbType dbType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "database_model_id", nullable = false)
+    private DatabaseModel databaseModel;
 
-    private String version;
-
-    @OneToMany(mappedBy = "databaseModel", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "schema", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<SchemaDefinition> schemas = new ArrayList<>();
+    private List<TableDefinition> tables = new ArrayList<>();
 
     @CreationTimestamp
     @Column(updatable = false)

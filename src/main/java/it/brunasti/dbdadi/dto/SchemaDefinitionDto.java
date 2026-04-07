@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TableDefinitionDto {
+public class SchemaDefinitionDto {
 
     private Long id;
 
@@ -23,11 +23,8 @@ public class TableDefinitionDto {
     private String description;
 
     @NotNull
-    private Long schemaId;
-
-    private String schemaName;
-
     private Long databaseModelId;
+
     private String databaseModelName;
 
     private LocalDateTime createdAt;
