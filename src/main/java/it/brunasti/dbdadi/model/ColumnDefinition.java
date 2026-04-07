@@ -47,7 +47,7 @@ public class ColumnDefinition {
     @Builder.Default
     private boolean primaryKey = false;
 
-    @Column(nullable = false)
+    @Column(name = "is_unique", nullable = false)
     @Builder.Default
     private boolean unique = false;
 
