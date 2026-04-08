@@ -32,6 +32,10 @@ public class RelationshipDefinitionService {
         return repository.findByFromTableId(fromTableId).stream().map(this::toDto).toList();
     }
 
+    public List<RelationshipDefinitionDto> findByToTable(Long toTableId) {
+        return repository.findByToTableId(toTableId).stream().map(this::toDto).toList();
+    }
+
     public List<RelationshipDefinitionDto> findByDatabaseModel(Long databaseModelId) {
         return repository.findByFromTable_Schema_DatabaseModel_Id(databaseModelId).stream().map(this::toDto).toList();
     }

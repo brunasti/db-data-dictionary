@@ -21,16 +21,14 @@ public class RelationshipDefinitionController {
     private final RelationshipDefinitionService service;
 
     @GetMapping
-    @Operation(summary = "List all relationships, optionally filtered by table or database model")
+    @Operation(summary = "List all relationships, optionally filtered by fromTableId, toTableId or databaseModelId")
     public List<RelationshipDefinitionDto> findAll(
             @RequestParam(required = false) Long fromTableId,
+            @RequestParam(required = false) Long toTableId,
             @RequestParam(required = false) Long databaseModelId) {
-        if (fromTableId != null) {
-            return service.findByFromTable(fromTableId);
-        }
-        if (databaseModelId != null) {
-            return service.findByDatabaseModel(databaseModelId);
-        }
+        if (fromTableId != null) return service.findByFromTable(fromTableId);
+        if (toTableId != null) return service.findByToTable(toTableId);
+        if (databaseModelId != null) return service.findByDatabaseModel(databaseModelId);
         return service.findAll();
     }
 
