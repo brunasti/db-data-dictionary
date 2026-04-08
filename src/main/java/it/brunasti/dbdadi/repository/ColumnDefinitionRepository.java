@@ -12,6 +12,10 @@ public interface ColumnDefinitionRepository extends JpaRepository<ColumnDefiniti
 
     List<ColumnDefinition> findByTableIdOrderByOrdinalPosition(Long tableId);
 
+    List<ColumnDefinition> findByTable_Schema_Id(Long schemaId);
+
+    List<ColumnDefinition> findByTable_Schema_DatabaseModel_Id(Long databaseModelId);
+
     Optional<ColumnDefinition> findByTableIdAndName(Long tableId, String name);
 
     boolean existsByTableIdAndName(Long tableId, String name);

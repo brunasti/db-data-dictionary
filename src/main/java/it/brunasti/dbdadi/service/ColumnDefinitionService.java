@@ -33,6 +33,14 @@ public class ColumnDefinitionService {
         return repository.findByTableIdOrderByOrdinalPosition(tableId).stream().map(this::toDto).toList();
     }
 
+    public List<ColumnDefinitionDto> findBySchema(Long schemaId) {
+        return repository.findByTable_Schema_Id(schemaId).stream().map(this::toDto).toList();
+    }
+
+    public List<ColumnDefinitionDto> findByDatabaseModel(Long databaseModelId) {
+        return repository.findByTable_Schema_DatabaseModel_Id(databaseModelId).stream().map(this::toDto).toList();
+    }
+
     @Transactional
     public ColumnDefinitionDto create(ColumnDefinitionDto dto) {
         if (repository.existsByTableIdAndName(dto.getTableId(), dto.getName())) {
