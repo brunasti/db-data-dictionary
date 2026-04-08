@@ -38,6 +38,10 @@ public class ColumnDefinitionDto {
     private Long tableId;
 
     private String tableName;
+    private Long schemaId;
+    private String schemaName;
+    private Long databaseModelId;
+    private String databaseModelName;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

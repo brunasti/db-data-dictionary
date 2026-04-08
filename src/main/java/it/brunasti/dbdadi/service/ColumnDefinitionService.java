@@ -89,6 +89,10 @@ public class ColumnDefinitionService {
                 .ordinalPosition(e.getOrdinalPosition())
                 .tableId(e.getTable().getId())
                 .tableName(e.getTable().getName())
+                .schemaId(e.getTable().getSchema().getId())
+                .schemaName(e.getTable().getSchema().getName())
+                .databaseModelId(e.getTable().getSchema().getDatabaseModel().getId())
+                .databaseModelName(e.getTable().getSchema().getDatabaseModel().getName())
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();
