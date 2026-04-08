@@ -34,6 +34,8 @@ public class RelationshipDefinitionDto {
     @NotBlank
     private String fromColumnName;
 
+    private Long fromColumnId;
+
     @NotNull
     private Long toTableId;
 
@@ -41,6 +43,8 @@ public class RelationshipDefinitionDto {
 
     @NotBlank
     private String toColumnName;
+
+    private Long toColumnId;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -4,6 +4,7 @@ import it.brunasti.dbdadi.dto.RelationshipDefinitionDto;
 import it.brunasti.dbdadi.exception.ResourceNotFoundException;
 import it.brunasti.dbdadi.model.RelationshipDefinition;
 import it.brunasti.dbdadi.model.TableDefinition;
+import it.brunasti.dbdadi.repository.ColumnDefinitionRepository;
 import it.brunasti.dbdadi.repository.RelationshipDefinitionRepository;
 import it.brunasti.dbdadi.repository.TableDefinitionRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ public class RelationshipDefinitionService {
 
     private final RelationshipDefinitionRepository repository;
     private final TableDefinitionRepository tableRepository;
+    private final ColumnDefinitionRepository columnRepo;
 
     public List<RelationshipDefinitionDto> findAll() {
         return repository.findAll().stream().map(this::toDto).toList();
@@ -73,6 +75,10 @@ public class RelationshipDefinitionService {
     }
 
     private RelationshipDefinitionDto toDto(RelationshipDefinition e) {
+        Long fromColumnId = columnRepo.findByTableIdAndName(e.getFromTable().getId(), e.getFromColumnName())
+                .map(c -> c.getId()).orElse(null);
+        Long toColumnId = columnRepo.findByTableIdAndName(e.getToTable().getId(), e.getToColumnName())
+                .map(c -> c.getId()).orElse(null);
         return RelationshipDefinitionDto.builder()
                 .id(e.getId())
                 .name(e.getName())
@@ -81,9 +87,11 @@ public class RelationshipDefinitionService {
                 .fromTableId(e.getFromTable().getId())
                 .fromTableName(e.getFromTable().getName())
                 .fromColumnName(e.getFromColumnName())
+                .fromColumnId(fromColumnId)
                 .toTableId(e.getToTable().getId())
                 .toTableName(e.getToTable().getName())
                 .toColumnName(e.getToColumnName())
+                .toColumnId(toColumnId)
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();
