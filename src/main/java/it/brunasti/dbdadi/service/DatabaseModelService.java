@@ -50,6 +50,11 @@ public class DatabaseModelService {
         existing.setDescription(dto.getDescription());
         existing.setDbType(dto.getDbType());
         existing.setVersion(dto.getVersion());
+        existing.setJdbcUrl(dto.getJdbcUrl());
+        existing.setUsername(dto.getUsername());
+        existing.setSchemaPattern(dto.getSchemaPattern());
+        existing.setTablePattern(dto.getTablePattern());
+        existing.setImportFlags(dto.getImportFlags());
         return toDto(repository.save(existing));
     }
 
@@ -71,6 +76,11 @@ public class DatabaseModelService {
                 .description(e.getDescription())
                 .dbType(e.getDbType())
                 .version(e.getVersion())
+                .jdbcUrl(e.getJdbcUrl())
+                .username(e.getUsername())
+                .schemaPattern(e.getSchemaPattern())
+                .tablePattern(e.getTablePattern())
+                .importFlags(e.getImportFlags())
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();
@@ -82,6 +92,11 @@ public class DatabaseModelService {
                 .description(dto.getDescription())
                 .dbType(dto.getDbType())
                 .version(dto.getVersion())
+                .jdbcUrl(dto.getJdbcUrl())
+                .username(dto.getUsername())
+                .schemaPattern(dto.getSchemaPattern())
+                .tablePattern(dto.getTablePattern())
+                .importFlags(dto.getImportFlags())
                 .build();
     }
 }

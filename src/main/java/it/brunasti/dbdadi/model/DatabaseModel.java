@@ -39,6 +39,18 @@ public class DatabaseModel {
 
     private String version;
 
+    @Column(length = 500)
+    private String jdbcUrl;
+
+    private String username;
+
+    private String schemaPattern;
+
+    private String tablePattern;
+
+    @Column(length = 500)
+    private String importFlags;
+
     @OneToMany(mappedBy = "databaseModel", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<SchemaDefinition> schemas = new ArrayList<>();
