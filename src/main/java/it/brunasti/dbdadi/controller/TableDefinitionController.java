@@ -21,15 +21,19 @@ public class TableDefinitionController {
     private final TableDefinitionService service;
 
     @GetMapping
-    @Operation(summary = "List all tables, optionally filtered by schema or database model")
+    @Operation(summary = "List all tables, optionally filtered by schema, database model or entity")
     public List<TableDefinitionDto> findAll(
             @RequestParam(required = false) Long schemaId,
-            @RequestParam(required = false) Long databaseModelId) {
+            @RequestParam(required = false) Long databaseModelId,
+            @RequestParam(required = false) Long entityId) {
         if (schemaId != null) {
             return service.findBySchema(schemaId);
         }
         if (databaseModelId != null) {
             return service.findByDatabaseModel(databaseModelId);
+        }
+        if (entityId != null) {
+            return service.findByEntity(entityId);
         }
         return service.findAll();
     }

@@ -3,8 +3,10 @@ package it.brunasti.dbdadi.service;
 import it.brunasti.dbdadi.dto.TableDefinitionDto;
 import it.brunasti.dbdadi.exception.DuplicateResourceException;
 import it.brunasti.dbdadi.exception.ResourceNotFoundException;
+import it.brunasti.dbdadi.model.EntityDefinition;
 import it.brunasti.dbdadi.model.SchemaDefinition;
 import it.brunasti.dbdadi.model.TableDefinition;
+import it.brunasti.dbdadi.repository.EntityDefinitionRepository;
 import it.brunasti.dbdadi.repository.SchemaDefinitionRepository;
 import it.brunasti.dbdadi.repository.TableDefinitionRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class TableDefinitionService {
 
     private final TableDefinitionRepository repository;
     private final SchemaDefinitionRepository schemaRepository;
+    private final EntityDefinitionRepository entityRepository;
 
     public List<TableDefinitionDto> findAll() {
         return repository.findAll().stream().map(this::toDto).toList();
@@ -37,6 +40,10 @@ public class TableDefinitionService {
         return repository.findBySchema_DatabaseModel_Id(databaseModelId).stream().map(this::toDto).toList();
     }
 
+    public List<TableDefinitionDto> findByEntity(Long entityId) {
+        return repository.findByEntityId(entityId).stream().map(this::toDto).toList();
+    }
+
     @Transactional
     public TableDefinitionDto create(TableDefinitionDto dto) {
         if (repository.existsBySchemaIdAndName(dto.getSchemaId(), dto.getName())) {
@@ -45,7 +52,8 @@ public class TableDefinitionService {
         }
         SchemaDefinition schema = schemaRepository.findById(dto.getSchemaId())
                 .orElseThrow(() -> new ResourceNotFoundException("SchemaDefinition", dto.getSchemaId()));
-        return toDto(repository.save(toEntity(dto, schema)));
+        EntityDefinition entity = resolveEntity(dto.getEntityId());
+        return toDto(repository.save(toEntity(dto, schema, entity)));
     }
 
     @Transactional
@@ -58,7 +66,14 @@ public class TableDefinitionService {
                     .orElseThrow(() -> new ResourceNotFoundException("SchemaDefinition", dto.getSchemaId()));
             existing.setSchema(schema);
         }
+        existing.setEntity(resolveEntity(dto.getEntityId()));
         return toDto(repository.save(existing));
+    }
+
+    private EntityDefinition resolveEntity(Long entityId) {
+        if (entityId == null) return null;
+        return entityRepository.findById(entityId)
+                .orElseThrow(() -> new ResourceNotFoundException("EntityDefinition", entityId));
     }
 
     @Transactional
@@ -81,16 +96,19 @@ public class TableDefinitionService {
                 .schemaName(e.getSchema().getName())
                 .databaseModelId(e.getSchema().getDatabaseModel().getId())
                 .databaseModelName(e.getSchema().getDatabaseModel().getName())
+                .entityId(e.getEntity() != null ? e.getEntity().getId() : null)
+                .entityName(e.getEntity() != null ? e.getEntity().getName() : null)
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();
     }
 
-    private TableDefinition toEntity(TableDefinitionDto dto, SchemaDefinition schema) {
+    private TableDefinition toEntity(TableDefinitionDto dto, SchemaDefinition schema, EntityDefinition entity) {
         return TableDefinition.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .schema(schema)
+                .entity(entity)
                 .build();
     }
 }

@@ -14,40 +14,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "table_definitions",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"schema_id", "name"}))
+@Table(name = "entity_definitions")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TableDefinition {
+public class EntityDefinition {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @Column(length = 1000)
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "schema_id", nullable = false)
-    private SchemaDefinition schema;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "entity_id", nullable = true)
-    private EntityDefinition entity;
-
-    @OneToMany(mappedBy = "table", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "entity", fetch = FetchType.LAZY)
     @Builder.Default
-    private List<ColumnDefinition> columns = new ArrayList<>();
-
-    @OneToMany(mappedBy = "fromTable", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<RelationshipDefinition> outgoingRelationships = new ArrayList<>();
+    private List<TableDefinition> tables = new ArrayList<>();
 
     @CreationTimestamp
     @Column(updatable = false)

@@ -17,4 +17,6 @@ public interface TableDefinitionRepository extends JpaRepository<TableDefinition
     Optional<TableDefinition> findBySchemaIdAndName(Long schemaId, String name);
 
     boolean existsBySchemaIdAndName(Long schemaId, String name);
+
+    List<TableDefinition> findByEntityId(Long entityId);
 }
