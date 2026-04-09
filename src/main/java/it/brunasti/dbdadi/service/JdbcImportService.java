@@ -106,6 +106,12 @@ public class JdbcImportService {
                 .name(request.getModelName())
                 .dbType(dbType)
                 .description("Imported via JDBC from " + request.getJdbcUrl())
+                .jdbcUrl(request.getJdbcUrl())
+                .username(request.getUsername())
+                .schemaPattern(request.getSchemaPattern())
+                .tablePattern(request.getTablePattern())
+                .importFlags((request.isIncludeViews() ? "includeViews" : "") +
+                             (request.isOverwrite() ? " overwrite" : "").trim())
                 .build();
         return dbModelRepo.save(model);
     }
