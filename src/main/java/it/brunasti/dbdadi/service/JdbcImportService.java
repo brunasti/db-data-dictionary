@@ -110,8 +110,7 @@ public class JdbcImportService {
                 .username(request.getUsername())
                 .schemaPattern(request.getSchemaPattern())
                 .tablePattern(request.getTablePattern())
-                .importFlags((request.isIncludeViews() ? "includeViews" : "") +
-                             (request.isOverwrite() ? " overwrite" : "").trim())
+                .importFlags(buildImportFlags(request))
                 .build();
         return dbModelRepo.save(model);
     }
@@ -318,6 +317,13 @@ public class JdbcImportService {
         return t.contains("INT") || t.contains("NUMERIC") || t.contains("DECIMAL")
                 || t.contains("FLOAT") || t.contains("DOUBLE") || t.contains("REAL")
                 || t.contains("NUMBER");
+    }
+
+    private String buildImportFlags(JdbcImportRequest request) {
+        List<String> flags = new ArrayList<>();
+        if (request.isIncludeViews()) flags.add("includeViews");
+        if (request.isOverwrite())    flags.add("overwrite");
+        return flags.isEmpty() ? "" : String.join(" - ", flags);
     }
 
     private String nullIfBlank(String value, String defaultValue) {
