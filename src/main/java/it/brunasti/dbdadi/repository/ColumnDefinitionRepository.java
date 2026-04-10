@@ -19,4 +19,6 @@ public interface ColumnDefinitionRepository extends JpaRepository<ColumnDefiniti
     Optional<ColumnDefinition> findByTableIdAndName(Long tableId, String name);
 
     boolean existsByTableIdAndName(Long tableId, String name);
+
+    List<ColumnDefinition> findByAttributeId(Long attributeId);
 }

@@ -3,8 +3,10 @@ package it.brunasti.dbdadi.service;
 import it.brunasti.dbdadi.dto.ColumnDefinitionDto;
 import it.brunasti.dbdadi.exception.DuplicateResourceException;
 import it.brunasti.dbdadi.exception.ResourceNotFoundException;
+import it.brunasti.dbdadi.model.AttributeDefinition;
 import it.brunasti.dbdadi.model.ColumnDefinition;
 import it.brunasti.dbdadi.model.TableDefinition;
+import it.brunasti.dbdadi.repository.AttributeDefinitionRepository;
 import it.brunasti.dbdadi.repository.ColumnDefinitionRepository;
 import it.brunasti.dbdadi.repository.TableDefinitionRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class ColumnDefinitionService {
 
     private final ColumnDefinitionRepository repository;
     private final TableDefinitionRepository tableRepository;
+    private final AttributeDefinitionRepository attributeRepository;
 
     public List<ColumnDefinitionDto> findAll() {
         return repository.findAll().stream().map(this::toDto).toList();
@@ -41,6 +44,10 @@ public class ColumnDefinitionService {
         return repository.findByTable_Schema_DatabaseModel_Id(databaseModelId).stream().map(this::toDto).toList();
     }
 
+    public List<ColumnDefinitionDto> findByAttribute(Long attributeId) {
+        return repository.findByAttributeId(attributeId).stream().map(this::toDto).toList();
+    }
+
     @Transactional
     public ColumnDefinitionDto create(ColumnDefinitionDto dto) {
         if (repository.existsByTableIdAndName(dto.getTableId(), dto.getName())) {
@@ -49,7 +56,8 @@ public class ColumnDefinitionService {
         }
         TableDefinition table = tableRepository.findById(dto.getTableId())
                 .orElseThrow(() -> new ResourceNotFoundException("TableDefinition", dto.getTableId()));
-        ColumnDefinition entity = toEntity(dto, table);
+        AttributeDefinition attribute = resolveAttribute(dto.getAttributeId());
+        ColumnDefinition entity = toEntity(dto, table, attribute);
         return toDto(repository.save(entity));
     }
 
@@ -67,6 +75,7 @@ public class ColumnDefinitionService {
         existing.setUnique(dto.isUnique());
         existing.setDefaultValue(dto.getDefaultValue());
         existing.setOrdinalPosition(dto.getOrdinalPosition());
+        existing.setAttribute(resolveAttribute(dto.getAttributeId()));
         return toDto(repository.save(existing));
     }
 
@@ -74,6 +83,12 @@ public class ColumnDefinitionService {
     public void delete(Long id) {
         getOrThrow(id);
         repository.deleteById(id);
+    }
+
+    private AttributeDefinition resolveAttribute(Long attributeId) {
+        if (attributeId == null) return null;
+        return attributeRepository.findById(attributeId)
+                .orElseThrow(() -> new ResourceNotFoundException("AttributeDefinition", attributeId));
     }
 
     private ColumnDefinition getOrThrow(Long id) {
@@ -101,12 +116,15 @@ public class ColumnDefinitionService {
                 .schemaName(e.getTable().getSchema().getName())
                 .databaseModelId(e.getTable().getSchema().getDatabaseModel().getId())
                 .databaseModelName(e.getTable().getSchema().getDatabaseModel().getName())
+                .attributeId(e.getAttribute() != null ? e.getAttribute().getId() : null)
+                .attributeName(e.getAttribute() != null ? e.getAttribute().getName() : null)
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();
     }
 
-    private ColumnDefinition toEntity(ColumnDefinitionDto dto, TableDefinition table) {
+    private ColumnDefinition toEntity(ColumnDefinitionDto dto, TableDefinition table,
+                                      AttributeDefinition attribute) {
         return ColumnDefinition.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
@@ -120,6 +138,7 @@ public class ColumnDefinitionService {
                 .defaultValue(dto.getDefaultValue())
                 .ordinalPosition(dto.getOrdinalPosition())
                 .table(table)
+                .attribute(attribute)
                 .build();
     }
 }

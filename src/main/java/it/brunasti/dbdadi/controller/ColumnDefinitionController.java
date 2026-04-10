@@ -21,14 +21,16 @@ public class ColumnDefinitionController {
     private final ColumnDefinitionService service;
 
     @GetMapping
-    @Operation(summary = "List all columns, optionally filtered by tableId, schemaId or databaseModelId")
+    @Operation(summary = "List all columns, optionally filtered by tableId, schemaId, databaseModelId or attributeId")
     public List<ColumnDefinitionDto> findAll(
             @RequestParam(required = false) Long tableId,
             @RequestParam(required = false) Long schemaId,
-            @RequestParam(required = false) Long databaseModelId) {
+            @RequestParam(required = false) Long databaseModelId,
+            @RequestParam(required = false) Long attributeId) {
         if (tableId != null) return service.findByTable(tableId);
         if (schemaId != null) return service.findBySchema(schemaId);
         if (databaseModelId != null) return service.findByDatabaseModel(databaseModelId);
+        if (attributeId != null) return service.findByAttribute(attributeId);
         return service.findAll();
     }
 

@@ -59,6 +59,10 @@ public class ColumnDefinition {
     @JoinColumn(name = "table_id", nullable = false)
     private TableDefinition table;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "attribute_id", nullable = true)
+    private AttributeDefinition attribute;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

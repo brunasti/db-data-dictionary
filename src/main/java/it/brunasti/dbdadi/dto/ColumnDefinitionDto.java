@@ -43,6 +43,9 @@ public class ColumnDefinitionDto {
     private Long databaseModelId;
     private String databaseModelName;
 
+    private Long attributeId;
+    private String attributeName;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
