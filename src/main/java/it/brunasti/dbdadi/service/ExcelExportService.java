@@ -17,8 +17,9 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ExcelExportService {
 
-    private final DatabaseModelRepository dbModelRepo;
     private final EntityDefinitionRepository entityRepo;
+    private final AttributeDefinitionRepository attributeRepo;
+    private final DatabaseModelRepository dbModelRepo;
     private final SchemaDefinitionRepository schemaRepo;
     private final TableDefinitionRepository tableRepo;
     private final ColumnDefinitionRepository columnRepo;
@@ -28,14 +29,18 @@ public class ExcelExportService {
         try (XSSFWorkbook wb = new XSSFWorkbook()) {
             CellStyle header = headerStyle(wb);
 
+            writeSheet(wb, header, "Entities",
+                    new String[]{"ID", "Name", "Description"},
+                    entityRepo.findAll(), this::entityRow);
+
+            writeSheet(wb, header, "Attributes",
+                    new String[]{"ID", "Name", "Description"},
+                    attributeRepo.findAll(), this::attributeRow);
+
             writeSheet(wb, header, "Database Models",
                     new String[]{"ID", "Name", "Description", "DB Type", "Version",
                                  "JDBC URL", "Username", "Schema Pattern", "Table Pattern", "Import Flags"},
                     dbModelRepo.findAll(), this::dbModelRow);
-
-            writeSheet(wb, header, "Entities",
-                    new String[]{"ID", "Name", "Description"},
-                    entityRepo.findAll(), this::entityRow);
 
             writeSheet(wb, header, "Schemas",
                     new String[]{"ID", "Name", "Description", "Database Model ID", "Database Model"},
@@ -114,6 +119,10 @@ public class ExcelExportService {
     }
 
     private Object[] entityRow(EntityDefinition e) {
+        return new Object[]{e.getId(), e.getName(), e.getDescription()};
+    }
+
+    private Object[] attributeRow(AttributeDefinition e) {
         return new Object[]{e.getId(), e.getName(), e.getDescription()};
     }
 
