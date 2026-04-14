@@ -32,6 +32,10 @@ public class AttributeDefinition {
     @Column(length = 1000)
     private String description;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "entity_id", nullable = true)
+    private EntityDefinition entity;
+
     @OneToMany(mappedBy = "attribute", fetch = FetchType.LAZY)
     @Builder.Default
     private List<ColumnDefinition> columns = new ArrayList<>();

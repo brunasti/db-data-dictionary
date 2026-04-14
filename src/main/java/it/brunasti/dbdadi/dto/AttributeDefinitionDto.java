@@ -21,6 +21,9 @@ public class AttributeDefinitionDto {
 
     private String description;
 
+    private Long entityId;
+    private String entityName;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

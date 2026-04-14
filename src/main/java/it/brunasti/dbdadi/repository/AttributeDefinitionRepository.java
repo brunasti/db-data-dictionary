@@ -10,4 +10,6 @@ import java.util.List;
 public interface AttributeDefinitionRepository extends JpaRepository<AttributeDefinition, Long> {
 
     List<AttributeDefinition> findAllByOrderByNameAsc();
+
+    List<AttributeDefinition> findByEntityIdOrderByNameAsc(Long entityId);
 }

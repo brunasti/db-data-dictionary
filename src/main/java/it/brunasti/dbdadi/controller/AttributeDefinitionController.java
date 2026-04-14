@@ -22,7 +22,9 @@ public class AttributeDefinitionController {
 
     @GetMapping
     @Operation(summary = "List all attribute definitions")
-    public List<AttributeDefinitionDto> findAll() {
+    public List<AttributeDefinitionDto> findAll(
+            @RequestParam(required = false) Long entityId) {
+        if (entityId != null) return service.findByEntity(entityId);
         return service.findAll();
     }
 
