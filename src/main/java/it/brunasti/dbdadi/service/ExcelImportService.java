@@ -35,9 +35,13 @@ public class ExcelImportService {
     private final UserRepository userRepo;
 
     @Transactional
-    public ExcelImportResult importFromExcel(byte[] data) throws IOException {
+    public ExcelImportResult importFromExcel(byte[] data, boolean clearBeforeImport) throws IOException {
         List<String> warnings = new ArrayList<>();
         int skipped = 0;
+
+        if (clearBeforeImport) {
+            clearAll();
+        }
 
         try (XSSFWorkbook wb = new XSSFWorkbook(new ByteArrayInputStream(data))) {
             ImportCounts c = new ImportCounts();
@@ -63,6 +67,20 @@ public class ExcelImportService {
                     .warnings(warnings)
                     .build();
         }
+    }
+
+    // ---- clear all data ----
+
+    private void clearAll() {
+        // Delete in FK-safe order
+        relationshipRepo.deleteAll();
+        columnRepo.deleteAll();
+        tableRepo.deleteAll();
+        schemaRepo.deleteAll();
+        dbModelRepo.deleteAll();
+        attributeRepo.deleteAll();
+        entityRepo.deleteAll();
+        userRepo.deleteAll();
     }
 
     // ---- sheet importers ----

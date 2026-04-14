@@ -24,7 +24,10 @@ public class ExcelImportController {
 
     @PostMapping(value = "/excel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Import full data dictionary from an Excel (.xlsx) file")
-    public ExcelImportResult importExcel(@RequestParam("file") MultipartFile file) throws IOException {
-        return service.importFromExcel(file.getBytes());
+    public ExcelImportResult importExcel(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "clearBeforeImport", defaultValue = "false") boolean clearBeforeImport)
+            throws IOException {
+        return service.importFromExcel(file.getBytes(), clearBeforeImport);
     }
 }
