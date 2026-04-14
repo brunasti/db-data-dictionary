@@ -88,10 +88,13 @@ public class ExcelImportService {
     }
 
     private int importAttributes(XSSFWorkbook wb, ImportCounts c, List<String> warnings) {
+        // col: 0=ID, 1=Name, 2=Description, 3=Entity ID, 4=Entity
         Sheet sheet = wb.getSheet("Attributes");
         if (sheet == null) return 0;
         Set<String> existing = attributeRepo.findAll().stream()
                 .map(AttributeDefinition::getName).collect(Collectors.toSet());
+        Map<String, EntityDefinition> entitiesByName = entityRepo.findAll().stream()
+                .collect(Collectors.toMap(EntityDefinition::getName, e -> e, (a, b) -> a));
         int skipped = 0;
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
@@ -103,8 +106,13 @@ public class ExcelImportService {
                 skipped++;
                 continue;
             }
+            String entityName = str(row, 4);
+            EntityDefinition entity = blank(entityName) ? null : entitiesByName.get(entityName);
+            if (!blank(entityName) && entity == null) {
+                warnings.add("Attribute '" + name + "': entity not found '" + entityName + "', imported without entity link");
+            }
             attributeRepo.save(AttributeDefinition.builder()
-                    .name(name).description(str(row, 2)).build());
+                    .name(name).description(str(row, 2)).entity(entity).build());
             existing.add(name);
             c.attributes++;
         }
@@ -219,7 +227,7 @@ public class ExcelImportService {
     private int importColumns(XSSFWorkbook wb, ImportCounts c, List<String> warnings) {
         // col: 0=ID, 1=Name, 2=Data Type, 3=Length, 4=Precision, 5=Scale,
         //      6=Nullable, 7=Primary Key, 8=Unique, 9=Position, 10=Default Value,
-        //      11=Description, 12=Table ID, 13=Table, 14=Schema, 15=Database Model
+        //      11=Description, 12=Table ID, 13=Table, 14=Schema, 15=Database Model, 16=Attribute
         Sheet sheet = wb.getSheet("Columns");
         if (sheet == null) return 0;
         Map<String, TableDefinition> tablesByKey = tableRepo.findAll().stream()
@@ -251,8 +259,11 @@ public class ExcelImportService {
                 skipped++;
                 continue;
             }
-            // Attributes sheet doesn't exist in old exports — look up by name from col not present
-            // Attribute column is not in the Columns sheet, so we leave it null here
+            String attributeName = str(row, 16);
+            AttributeDefinition attribute = blank(attributeName) ? null : attributesByName.get(attributeName);
+            if (!blank(attributeName) && attribute == null) {
+                warnings.add("Column '" + name + "': attribute not found '" + attributeName + "', imported without attribute link");
+            }
             columnRepo.save(ColumnDefinition.builder()
                     .name(name)
                     .dataType(dataType != null ? dataType : "VARCHAR")
@@ -266,6 +277,7 @@ public class ExcelImportService {
                     .defaultValue(str(row, 10))
                     .description(str(row, 11))
                     .table(table)
+                    .attribute(attribute)
                     .build());
             c.columns++;
         }

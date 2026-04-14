@@ -34,7 +34,7 @@ public class ExcelExportService {
                     entityRepo.findAll(), this::entityRow);
 
             writeSheet(wb, header, "Attributes",
-                    new String[]{"ID", "Name", "Description"},
+                    new String[]{"ID", "Name", "Description", "Entity ID", "Entity"},
                     attributeRepo.findAll(), this::attributeRow);
 
             writeSheet(wb, header, "Database Models",
@@ -55,7 +55,7 @@ public class ExcelExportService {
                     new String[]{"ID", "Name", "Data Type", "Length", "Precision", "Scale",
                                  "Nullable", "Primary Key", "Unique", "Position",
                                  "Default Value", "Description",
-                                 "Table ID", "Table", "Schema", "Database Model"},
+                                 "Table ID", "Table", "Schema", "Database Model", "Attribute"},
                     columnRepo.findAll(), this::columnRow);
 
             writeSheet(wb, header, "Relationships",
@@ -123,7 +123,9 @@ public class ExcelExportService {
     }
 
     private Object[] attributeRow(AttributeDefinition e) {
-        return new Object[]{e.getId(), e.getName(), e.getDescription()};
+        return new Object[]{e.getId(), e.getName(), e.getDescription(),
+                e.getEntity() != null ? e.getEntity().getId() : null,
+                e.getEntity() != null ? e.getEntity().getName() : null};
     }
 
     private Object[] schemaRow(SchemaDefinition e) {
@@ -146,7 +148,8 @@ public class ExcelExportService {
                 e.getOrdinalPosition(), e.getDefaultValue(), e.getDescription(),
                 e.getTable().getId(), e.getTable().getName(),
                 e.getTable().getSchema().getName(),
-                e.getTable().getSchema().getDatabaseModel().getName()};
+                e.getTable().getSchema().getDatabaseModel().getName(),
+                e.getAttribute() != null ? e.getAttribute().getName() : null};
     }
 
     private Object[] relationshipRow(RelationshipDefinition e) {
