@@ -76,6 +76,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Spring Security (BCrypt password encoding) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- Apache POI - Excel export -->
         <dependency>
             <groupId>org.apache.poi</groupId>
