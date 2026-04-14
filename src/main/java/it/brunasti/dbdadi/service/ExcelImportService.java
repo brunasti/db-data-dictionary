@@ -4,6 +4,7 @@ import it.brunasti.dbdadi.dto.ExcelImportResult;
 import it.brunasti.dbdadi.model.*;
 import it.brunasti.dbdadi.model.enums.DbType;
 import it.brunasti.dbdadi.model.enums.RelationshipType;
+import it.brunasti.dbdadi.model.enums.UserRole;
 import it.brunasti.dbdadi.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ public class ExcelImportService {
     private final TableDefinitionRepository tableRepo;
     private final ColumnDefinitionRepository columnRepo;
     private final RelationshipDefinitionRepository relationshipRepo;
+    private final UserRepository userRepo;
 
     @Transactional
     public ExcelImportResult importFromExcel(byte[] data) throws IOException {
@@ -46,6 +48,7 @@ public class ExcelImportService {
             skipped += importTables(wb, c, warnings);
             skipped += importColumns(wb, c, warnings);
             skipped += importRelationships(wb, c, warnings);
+            skipped += importUsers(wb, c, warnings);
 
             return ExcelImportResult.builder()
                     .entitiesImported(c.entities)
@@ -55,6 +58,7 @@ public class ExcelImportService {
                     .tablesImported(c.tables)
                     .columnsImported(c.columns)
                     .relationshipsImported(c.relationships)
+                    .usersImported(c.users)
                     .skipped(skipped)
                     .warnings(warnings)
                     .build();
@@ -334,6 +338,35 @@ public class ExcelImportService {
         return skipped;
     }
 
+    private int importUsers(XSSFWorkbook wb, ImportCounts c, List<String> warnings) {
+        // col: 0=ID, 1=Username, 2=Password Hash, 3=Role, 4=Enabled
+        Sheet sheet = wb.getSheet("Users");
+        if (sheet == null) return 0;
+        int skipped = 0;
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) continue;
+            String username = str(row, 1);
+            String passwordHash = str(row, 2);
+            if (blank(username) || blank(passwordHash)) continue;
+            if (userRepo.existsByUsername(username)) {
+                warnings.add("User skipped (duplicate): " + username);
+                skipped++;
+                continue;
+            }
+            UserRole role = parseEnum(UserRole.class, str(row, 3), "Role", username, warnings);
+            if (role == null) { skipped++; continue; }
+            userRepo.save(User.builder()
+                    .username(username)
+                    .passwordHash(passwordHash)
+                    .role(role)
+                    .enabled(boolVal(row, 4))
+                    .build());
+            c.users++;
+        }
+        return skipped;
+    }
+
     // ---- helpers ----
 
     private TableDefinition findTableBySimpleName(Map<String, TableDefinition> tablesByKey,
@@ -421,6 +454,6 @@ public class ExcelImportService {
     }
 
     private static class ImportCounts {
-        int entities, attributes, dbModels, schemas, tables, columns, relationships;
+        int entities, attributes, dbModels, schemas, tables, columns, relationships, users;
     }
 }

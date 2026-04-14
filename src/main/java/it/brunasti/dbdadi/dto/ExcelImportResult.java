@@ -19,6 +19,7 @@ public class ExcelImportResult {
     private int tablesImported;
     private int columnsImported;
     private int relationshipsImported;
+    private int usersImported;
     private int skipped;
     private List<String> warnings;
 }

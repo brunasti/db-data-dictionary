@@ -1,6 +1,7 @@
 package it.brunasti.dbdadi.service;
 
 import it.brunasti.dbdadi.model.*;
+import it.brunasti.dbdadi.model.enums.UserRole;
 import it.brunasti.dbdadi.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
@@ -24,6 +25,7 @@ public class ExcelExportService {
     private final TableDefinitionRepository tableRepo;
     private final ColumnDefinitionRepository columnRepo;
     private final RelationshipDefinitionRepository relationshipRepo;
+    private final UserRepository userRepo;
 
     public byte[] exportAll() throws IOException {
         try (XSSFWorkbook wb = new XSSFWorkbook()) {
@@ -63,6 +65,10 @@ public class ExcelExportService {
                                  "From Table ID", "From Table", "From Column",
                                  "To Table ID", "To Table", "To Column"},
                     relationshipRepo.findAll(), this::relationshipRow);
+
+            writeSheet(wb, header, "Users",
+                    new String[]{"ID", "Username", "Password Hash", "Role", "Enabled"},
+                    userRepo.findAll(), this::userRow);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             wb.write(out);
@@ -150,6 +156,11 @@ public class ExcelExportService {
                 e.getTable().getSchema().getName(),
                 e.getTable().getSchema().getDatabaseModel().getName(),
                 e.getAttribute() != null ? e.getAttribute().getName() : null};
+    }
+
+    private Object[] userRow(User e) {
+        return new Object[]{e.getId(), e.getUsername(), e.getPasswordHash(),
+                e.getRole() != null ? e.getRole().name() : null, e.isEnabled()};
     }
 
     private Object[] relationshipRow(RelationshipDefinition e) {
