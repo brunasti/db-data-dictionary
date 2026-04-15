@@ -51,7 +51,8 @@ public class ExcelImportService {
             skipped += importSchemas(wb, c, warnings);
             skipped += importTables(wb, c, warnings);
             skipped += importColumns(wb, c, warnings);
-            skipped += importRelationships(wb, c, warnings);
+            Map<Long, TableDefinition> tableIdMap = buildTableIdMap(wb);
+            skipped += importRelationships(wb, c, warnings, tableIdMap);
             skipped += importUsers(wb, c, warnings);
 
             return ExcelImportResult.builder()
@@ -306,18 +307,42 @@ public class ExcelImportService {
         return skipped;
     }
 
-    private int importRelationships(XSSFWorkbook wb, ImportCounts c, List<String> warnings) {
-        // col: 0=ID, 1=Name, 2=Type, 3=Description,
-        //      4=From Table ID, 5=From Table, 6=From Column,
-        //      7=To Table ID, 8=To Table, 9=To Column
-        Sheet sheet = wb.getSheet("Relationships");
-        if (sheet == null) return 0;
+    private Map<Long, TableDefinition> buildTableIdMap(XSSFWorkbook wb) {
+        // col: 0=ID, 1=Name, 2=Description, 3=Schema ID, 4=Schema,
+        //      5=Database Model ID, 6=Database Model, 7=Entity ID, 8=Entity
+        Sheet sheet = wb.getSheet("Tables");
+        if (sheet == null) return Collections.emptyMap();
         Map<String, TableDefinition> tablesByKey = tableRepo.findAll().stream()
                 .collect(Collectors.toMap(
                         t -> t.getSchema().getDatabaseModel().getName()
                                 + "/" + t.getSchema().getName()
                                 + "/" + t.getName(),
                         t -> t, (a, b) -> a));
+        Map<Long, TableDefinition> result = new HashMap<>();
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) continue;
+            Long exportedId = longVal(row, 0);
+            if (exportedId == null) continue;
+            String name = str(row, 1);
+            String schemaName = str(row, 4);
+            String dbModelName = str(row, 6);
+            if (blank(name) || blank(schemaName) || blank(dbModelName)) continue;
+            TableDefinition table = tablesByKey.get(dbModelName + "/" + schemaName + "/" + name);
+            if (table != null) {
+                result.put(exportedId, table);
+            }
+        }
+        return result;
+    }
+
+    private int importRelationships(XSSFWorkbook wb, ImportCounts c, List<String> warnings,
+                                     Map<Long, TableDefinition> tableIdMap) {
+        // col: 0=ID, 1=Name, 2=Type, 3=Description,
+        //      4=From Table ID, 5=From Table, 6=From Column,
+        //      7=To Table ID, 8=To Table, 9=To Column
+        Sheet sheet = wb.getSheet("Relationships");
+        if (sheet == null) return 0;
         // Build a from+to lookup to avoid exact duplicates
         Set<String> existingRels = relationshipRepo.findAll().stream()
                 .map(r -> r.getFromTable().getId() + "." + r.getFromColumnName()
@@ -331,14 +356,22 @@ public class ExcelImportService {
             if (blank(name)) continue;
             RelationshipType type = parseEnum(RelationshipType.class, str(row, 2), "Type", name, warnings);
             if (type == null) { skipped++; continue; }
-            String fromTableName = str(row, 5);
+            Long fromTableId = longVal(row, 4);
             String fromColumn = str(row, 6);
-            String toTableName = str(row, 8);
+            Long toTableId = longVal(row, 7);
             String toColumn = str(row, 9);
-            // Tables sheet only has table name; we need to find by name (may be ambiguous)
-            TableDefinition fromTable = findTableBySimpleName(tablesByKey, fromTableName, name, "from", warnings);
-            TableDefinition toTable = findTableBySimpleName(tablesByKey, toTableName, name, "to", warnings);
-            if (fromTable == null || toTable == null) { skipped++; continue; }
+            TableDefinition fromTable = fromTableId == null ? null : tableIdMap.get(fromTableId);
+            TableDefinition toTable = toTableId == null ? null : tableIdMap.get(toTableId);
+            if (fromTable == null) {
+                warnings.add("Relationship skipped (from table id not found: " + fromTableId + "): " + name);
+                skipped++;
+                continue;
+            }
+            if (toTable == null) {
+                warnings.add("Relationship skipped (to table id not found: " + toTableId + "): " + name);
+                skipped++;
+                continue;
+            }
             String key = fromTable.getId() + "." + fromColumn + "->" + toTable.getId() + "." + toColumn;
             if (existingRels.contains(key)) {
                 warnings.add("Relationship skipped (duplicate): " + name);
@@ -386,29 +419,6 @@ public class ExcelImportService {
     }
 
     // ---- helpers ----
-
-    private TableDefinition findTableBySimpleName(Map<String, TableDefinition> tablesByKey,
-                                                   String tableName, String relName,
-                                                   String side, List<String> warnings) {
-        if (blank(tableName)) {
-            warnings.add("Relationship skipped (missing " + side + " table): " + relName);
-            return null;
-        }
-        // Key format is dbModel/schema/table — find first match by table name suffix
-        List<TableDefinition> matches = tablesByKey.entrySet().stream()
-                .filter(e -> e.getKey().endsWith("/" + tableName))
-                .map(Map.Entry::getValue)
-                .toList();
-        if (matches.isEmpty()) {
-            warnings.add("Relationship skipped (" + side + " table not found: " + tableName + "): " + relName);
-            return null;
-        }
-        if (matches.size() > 1) {
-            warnings.add("Relationship: ambiguous " + side + " table name '" + tableName
-                    + "' — using first match for: " + relName);
-        }
-        return matches.get(0);
-    }
 
     private <T extends Enum<T>> T parseEnum(Class<T> type, String value, String field,
                                              String rowName, List<String> warnings) {
