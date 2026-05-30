@@ -24,10 +24,10 @@ public class AnalysisService {
     public AnalysisResult analyze() {
         List<TableDefinition> allTables = tableRepository.findAll();
 
-        // Group unlinked tables by normalised name; keep groups spanning 2+ distinct DB models
+        // Group unlinked tables by singularised name; keep groups spanning 2+ distinct DB models
         Map<String, List<TableDefinition>> byName = allTables.stream()
                 .filter(t -> t.getEntity() == null)
-                .collect(Collectors.groupingBy(t -> t.getName().toUpperCase(Locale.ROOT).trim()));
+                .collect(Collectors.groupingBy(t -> singularize(t.getName())));
 
         List<AnalysisEntitySuggestion> entitySuggestions = byName.entrySet().stream()
                 .filter(e -> {
@@ -40,18 +40,16 @@ public class AnalysisService {
                 .map(e -> buildEntitySuggestion(e.getKey(), e.getValue()))
                 .toList();
 
-        // For each entity suggestion, find matching unlinked columns across those tables
+        // Entity-scoped: find matching unlinked columns within each entity suggestion's tables
         List<AnalysisAttributeSuggestion> attributeSuggestions = new ArrayList<>();
-        int totalColumns = 0;
 
         for (AnalysisEntitySuggestion es : entitySuggestions) {
-            List<ColumnDefinition> allColumns = es.getTableIds().stream()
+            List<ColumnDefinition> scopedColumns = es.getTableIds().stream()
                     .flatMap(tid -> columnRepository.findByTableIdOrderByOrdinalPosition(tid).stream())
                     .filter(c -> c.getAttribute() == null)
                     .toList();
-            totalColumns += allColumns.size();
 
-            Map<String, List<ColumnDefinition>> colsByName = allColumns.stream()
+            Map<String, List<ColumnDefinition>> colsByName = scopedColumns.stream()
                     .collect(Collectors.groupingBy(c -> c.getName().toUpperCase(Locale.ROOT).trim()));
 
             colsByName.entrySet().stream()
@@ -66,11 +64,36 @@ public class AnalysisService {
                     .forEach(attributeSuggestions::add);
         }
 
+        // Global sweep: columns matching across 2+ DB models, not already covered above
+        Set<Long> coveredColumnIds = attributeSuggestions.stream()
+                .flatMap(s -> s.getColumnIds().stream())
+                .collect(Collectors.toCollection(HashSet::new));
+
+        List<ColumnDefinition> allUnlinkedColumns = allTables.stream()
+                .flatMap(t -> columnRepository.findByTableIdOrderByOrdinalPosition(t.getId()).stream())
+                .filter(c -> c.getAttribute() == null)
+                .toList();
+
+        Map<String, List<ColumnDefinition>> globalColsByName = allUnlinkedColumns.stream()
+                .filter(c -> !coveredColumnIds.contains(c.getId()))
+                .collect(Collectors.groupingBy(c -> c.getName().toUpperCase(Locale.ROOT).trim()));
+
+        globalColsByName.entrySet().stream()
+                .filter(e -> {
+                    long distinctDbs = e.getValue().stream()
+                            .map(c -> c.getTable().getSchema().getDatabaseModel().getId())
+                            .distinct().count();
+                    return distinctDbs >= 2;
+                })
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> buildAttributeSuggestion("", e.getKey(), e.getValue()))
+                .forEach(attributeSuggestions::add);
+
         return AnalysisResult.builder()
                 .entitySuggestions(entitySuggestions)
                 .attributeSuggestions(attributeSuggestions)
                 .tablesAnalyzed(allTables.size())
-                .columnsAnalyzed(totalColumns)
+                .columnsAnalyzed(allUnlinkedColumns.size())
                 .build();
     }
 
@@ -128,12 +151,17 @@ public class AnalysisService {
         }
 
         for (AnalysisAttributeSuggestion suggestion : orEmpty(request.getAttributes())) {
-            EntityDefinition parentEntity = entityByNormName
-                    .get(suggestion.getEntityName().toUpperCase(Locale.ROOT));
-            if (parentEntity == null) {
-                parentEntity = entityRepository.findByNameIgnoreCase(suggestion.getEntityName()).orElse(null);
+            boolean hasEntity = suggestion.getEntityName() != null && !suggestion.getEntityName().isBlank();
+
+            EntityDefinition parentEntity = null;
+            if (hasEntity) {
+                parentEntity = entityByNormName.get(suggestion.getEntityName().toUpperCase(Locale.ROOT));
+                if (parentEntity == null) {
+                    parentEntity = entityRepository.findByNameIgnoreCase(suggestion.getEntityName()).orElse(null);
+                }
+                if (parentEntity == null) continue; // named entity required but not found
             }
-            if (parentEntity == null) continue;
+            // parentEntity stays null for cross-entity suggestions — entity is optional in the model
 
             final EntityDefinition finalEntity = parentEntity;
             AttributeDefinition attribute;
@@ -143,8 +171,9 @@ public class AnalysisService {
                                 "AttributeDefinition", suggestion.getExistingAttributeId()));
                 attributesReused++;
             } else {
-                Optional<AttributeDefinition> existing = attributeRepository
-                        .findByNameIgnoreCaseAndEntityId(suggestion.getSuggestedName(), finalEntity.getId());
+                Optional<AttributeDefinition> existing = finalEntity != null
+                        ? attributeRepository.findByNameIgnoreCaseAndEntityId(suggestion.getSuggestedName(), finalEntity.getId())
+                        : attributeRepository.findByNameIgnoreCase(suggestion.getSuggestedName());
                 if (existing.isPresent()) {
                     attribute = existing.get();
                     attributesReused++;
@@ -183,8 +212,12 @@ public class AnalysisService {
         Long existingId = entityRepository.findByNameIgnoreCase(normName)
                 .map(EntityDefinition::getId).orElse(null);
 
-        // Use the original casing from the first table
-        String displayName = tables.get(0).getName();
+        // Prefer the table whose name is already singular (i.e. already equal to the normalised key)
+        String displayName = tables.stream()
+                .filter(t -> singularize(t.getName()).equals(normName))
+                .map(TableDefinition::getName)
+                .findFirst()
+                .orElse(normName); // fall back to the singularised key itself
 
         return AnalysisEntitySuggestion.builder()
                 .suggestedName(displayName)
@@ -202,9 +235,15 @@ public class AnalysisService {
 
         String displayName = columns.get(0).getName();
 
-        Long existingId = entityRepository.findByNameIgnoreCase(entityName)
-                .flatMap(e -> attributeRepository.findByNameIgnoreCaseAndEntityId(normName, e.getId()))
-                .map(AttributeDefinition::getId).orElse(null);
+        Long existingId;
+        if (entityName == null || entityName.isBlank()) {
+            existingId = attributeRepository.findByNameIgnoreCase(normName)
+                    .map(AttributeDefinition::getId).orElse(null);
+        } else {
+            existingId = entityRepository.findByNameIgnoreCase(entityName)
+                    .flatMap(e -> attributeRepository.findByNameIgnoreCaseAndEntityId(normName, e.getId()))
+                    .map(AttributeDefinition::getId).orElse(null);
+        }
 
         return AnalysisAttributeSuggestion.builder()
                 .suggestedName(displayName)
@@ -221,5 +260,36 @@ public class AnalysisService {
 
     private <T> List<T> orEmpty(List<T> list) {
         return list == null ? List.of() : list;
+    }
+
+    /**
+     * Reduces an English noun to its singular upper-case form so that
+     * CUSTOMER / CUSTOMERS, CATEGORY / CATEGORIES, ADDRESS / ADDRESSES, etc.
+     * all map to the same grouping key.
+     *
+     * Rules (applied in order):
+     *  IES  → Y          (CATEGORIES → CATEGORY, ENTITIES → ENTITY)
+     *  SES  → S          (STATUSES → STATUS, ADDRESSES → ADDRESS)
+     *  XES  → X          (BOXES → BOX)
+     *  ZES  → Z          (BUZZES → BUZZ)
+     *  CHES → CH         (CHURCHES → CHURCH)
+     *  SHES → SH         (DISHES → DISH)
+     *  SS / US / IS → unchanged  (STATUS, ADDRESS, BASIS — already singular)
+     *  S    → remove S   (CUSTOMERS → CUSTOMER, TYPES → TYPE)
+     */
+    static String singularize(String word) {
+        String w = word.toUpperCase(Locale.ROOT).trim();
+        if (w.length() <= 1) return w;
+
+        if (w.endsWith("IES"))  return w.substring(0, w.length() - 3) + "Y";
+        if (w.endsWith("SES"))  return w.substring(0, w.length() - 2);
+        if (w.endsWith("XES"))  return w.substring(0, w.length() - 2);
+        if (w.endsWith("ZES"))  return w.substring(0, w.length() - 2);
+        if (w.endsWith("CHES")) return w.substring(0, w.length() - 2);
+        if (w.endsWith("SHES")) return w.substring(0, w.length() - 2);
+        if (w.endsWith("SS") || w.endsWith("US") || w.endsWith("IS")) return w;
+        if (w.endsWith("S"))    return w.substring(0, w.length() - 1);
+
+        return w;
     }
 }

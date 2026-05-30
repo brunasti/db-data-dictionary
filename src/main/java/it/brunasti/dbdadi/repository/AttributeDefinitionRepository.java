@@ -14,4 +14,6 @@ public interface AttributeDefinitionRepository extends JpaRepository<AttributeDe
     List<AttributeDefinition> findByEntityIdOrderByNameAsc(Long entityId);
 
     java.util.Optional<AttributeDefinition> findByNameIgnoreCaseAndEntityId(String name, Long entityId);
+
+    java.util.Optional<AttributeDefinition> findByNameIgnoreCase(String name);
 }
