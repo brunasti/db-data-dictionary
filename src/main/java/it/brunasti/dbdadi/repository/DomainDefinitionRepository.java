@@ -12,4 +12,6 @@ public interface DomainDefinitionRepository extends JpaRepository<DomainDefiniti
     List<DomainDefinition> findAllByOrderByNameAsc();
 
     List<DomainDefinition> findByEntities_Id(Long entityId);
+
+    java.util.Optional<DomainDefinition> findByNameIgnoreCase(String name);
 }

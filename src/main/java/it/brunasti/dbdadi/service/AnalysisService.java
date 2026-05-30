@@ -81,6 +81,15 @@ public class AnalysisService {
 
         Map<String, EntityDefinition> entityByNormName = new HashMap<>();
 
+        // Resolve (or create) the target domain once for all entity suggestions
+        DomainDefinition targetDomain = null;
+        if (request.getDomainName() != null && !request.getDomainName().isBlank()) {
+            targetDomain = domainRepository.findByNameIgnoreCase(request.getDomainName().trim())
+                    .orElseGet(() -> domainRepository.save(
+                            DomainDefinition.builder().name(request.getDomainName().trim()).build()));
+        }
+        final DomainDefinition domain = targetDomain;
+
         for (AnalysisEntitySuggestion suggestion : orEmpty(request.getEntities())) {
             EntityDefinition entity;
             if (suggestion.getExistingEntityId() != null) {
@@ -112,12 +121,9 @@ public class AnalysisService {
                 }
             }
 
-            if (request.getDomainId() != null) {
-                DomainDefinition domain = domainRepository.findById(request.getDomainId()).orElse(null);
-                if (domain != null && !domain.getEntities().contains(entity)) {
-                    domain.getEntities().add(entity);
-                    domainRepository.save(domain);
-                }
+            if (domain != null && !domain.getEntities().contains(entity)) {
+                domain.getEntities().add(entity);
+                domainRepository.save(domain);
             }
         }
 
