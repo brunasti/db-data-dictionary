@@ -14,4 +14,8 @@ public interface RelationshipDefinitionRepository extends JpaRepository<Relation
     List<RelationshipDefinition> findByToTableId(Long toTableId);
 
     List<RelationshipDefinition> findByFromTable_Schema_DatabaseModel_Id(Long databaseModelId);
+
+    List<RelationshipDefinition> findByFromTable_Schema_Id(Long schemaId);
+
+    List<RelationshipDefinition> findByToTable_Schema_Id(Long schemaId);
 }
