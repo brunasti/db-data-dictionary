@@ -10,4 +10,8 @@ import java.util.List;
 public interface EntityDefinitionRepository extends JpaRepository<EntityDefinition, Long> {
 
     List<EntityDefinition> findAllByOrderByNameAsc();
+
+    List<EntityDefinition> findByDomains_Id(Long domainId);
+
+    java.util.Optional<EntityDefinition> findByNameIgnoreCase(String name);
 }

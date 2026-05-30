@@ -11,12 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "entity_definitions")
+@Table(name = "domain_definitions")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EntityDefinition {
+public class DomainDefinition {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,15 +29,16 @@ public class EntityDefinition {
     @Column(length = 1000)
     private String description;
 
-    @OneToMany(mappedBy = "entity", fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<TableDefinition> tables = new ArrayList<>();
-
-    @ManyToMany(mappedBy = "entities")
+    @ManyToMany
+    @JoinTable(
+        name = "domain_entity",
+        joinColumns = @JoinColumn(name = "domain_id"),
+        inverseJoinColumns = @JoinColumn(name = "entity_id")
+    )
     @Builder.Default
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<DomainDefinition> domains = new ArrayList<>();
+    private List<EntityDefinition> entities = new ArrayList<>();
 
     @CreationTimestamp
     @Column(updatable = false)

@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.dto.DomainDefinitionDto;
 import it.brunasti.dbdadi.dto.EntityDefinitionDto;
 import it.brunasti.dbdadi.service.EntityDefinitionService;
 import jakarta.validation.Valid;
@@ -21,8 +22,11 @@ public class EntityDefinitionController {
     private final EntityDefinitionService service;
 
     @GetMapping
-    @Operation(summary = "List all entity definitions")
-    public List<EntityDefinitionDto> findAll() {
+    @Operation(summary = "List all entity definitions, optionally filtered by domain")
+    public List<EntityDefinitionDto> findAll(@RequestParam(required = false) Long domainId) {
+        if (domainId != null) {
+            return service.findByDomain(domainId);
+        }
         return service.findAll();
     }
 
@@ -43,6 +47,19 @@ public class EntityDefinitionController {
     @Operation(summary = "Update an entity definition")
     public EntityDefinitionDto update(@PathVariable Long id, @Valid @RequestBody EntityDefinitionDto dto) {
         return service.update(id, dto);
+    }
+
+    @GetMapping("/{id}/domains")
+    @Operation(summary = "Get all domains this entity belongs to")
+    public List<DomainDefinitionDto> findDomains(@PathVariable Long id) {
+        return service.findDomains(id);
+    }
+
+    @PutMapping("/{id}/domains")
+    @Operation(summary = "Set the full list of domains this entity belongs to")
+    public ResponseEntity<Void> setDomains(@PathVariable Long id, @RequestBody List<Long> domainIds) {
+        service.setDomains(id, domainIds);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
