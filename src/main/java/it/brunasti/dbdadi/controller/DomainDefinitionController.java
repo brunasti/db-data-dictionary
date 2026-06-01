@@ -3,6 +3,7 @@ package it.brunasti.dbdadi.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.brunasti.dbdadi.aspect.Loggable;
+import it.brunasti.dbdadi.dto.DatabaseModelDto;
 import it.brunasti.dbdadi.dto.DomainDefinitionDto;
 import it.brunasti.dbdadi.dto.EntityDefinitionDto;
 import it.brunasti.dbdadi.service.DomainDefinitionService;
@@ -23,12 +24,13 @@ public class DomainDefinitionController {
     private final DomainDefinitionService service;
 
     @GetMapping
-    @Operation(summary = "List all domains, optionally filtered by entity")
+    @Operation(summary = "List all domains, optionally filtered by entity or database model")
     @Loggable
-    public List<DomainDefinitionDto> findAll(@RequestParam(required = false) Long entityId) {
-        if (entityId != null) {
-            return service.findByEntity(entityId);
-        }
+    public List<DomainDefinitionDto> findAll(
+            @RequestParam(required = false) Long entityId,
+            @RequestParam(required = false) Long databaseModelId) {
+        if (entityId != null) return service.findByEntity(entityId);
+        if (databaseModelId != null) return service.findByDatabaseModel(databaseModelId);
         return service.findAll();
     }
 
@@ -44,6 +46,13 @@ public class DomainDefinitionController {
     @Loggable
     public List<EntityDefinitionDto> findEntities(@PathVariable Long id) {
         return service.findEntities(id);
+    }
+
+    @GetMapping("/{id}/database-models")
+    @Operation(summary = "Get all database models linked to a domain")
+    @Loggable
+    public List<DatabaseModelDto> findDatabaseModels(@PathVariable Long id) {
+        return service.findDatabaseModels(id);
     }
 
     @PostMapping
@@ -66,6 +75,14 @@ public class DomainDefinitionController {
     @Loggable
     public ResponseEntity<Void> setEntities(@PathVariable Long id, @RequestBody List<Long> entityIds) {
         service.setEntities(id, entityIds);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/database-models")
+    @Operation(summary = "Set the full list of database models linked to a domain")
+    @Loggable
+    public ResponseEntity<Void> setDatabaseModels(@PathVariable Long id, @RequestBody List<Long> dbModelIds) {
+        service.setDatabaseModels(id, dbModelIds);
         return ResponseEntity.noContent().build();
     }
 

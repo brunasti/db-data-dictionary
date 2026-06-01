@@ -98,6 +98,7 @@ public class TableDefinitionService {
                 .databaseModelName(e.getSchema().getDatabaseModel().getName())
                 .entityId(e.getEntity() != null ? e.getEntity().getId() : null)
                 .entityName(e.getEntity() != null ? e.getEntity().getName() : null)
+                .rowCount(e.getRowCount())
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())
                 .build();

@@ -3,8 +3,11 @@ package it.brunasti.dbdadi.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.brunasti.dbdadi.aspect.Loggable;
+import it.brunasti.dbdadi.dto.BulkEntityRequest;
+import it.brunasti.dbdadi.dto.BulkEntityResult;
 import it.brunasti.dbdadi.dto.DomainDefinitionDto;
 import it.brunasti.dbdadi.dto.EntityDefinitionDto;
+import it.brunasti.dbdadi.service.BulkEntityService;
 import it.brunasti.dbdadi.service.EntityDefinitionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import java.util.List;
 public class EntityDefinitionController {
 
     private final EntityDefinitionService service;
+    private final BulkEntityService bulkEntityService;
 
     @GetMapping
     @Operation(summary = "List all entity definitions, optionally filtered by domain")
@@ -67,6 +71,13 @@ public class EntityDefinitionController {
     public ResponseEntity<Void> setDomains(@PathVariable Long id, @RequestBody List<Long> domainIds) {
         service.setDomains(id, domainIds);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/bulk-create")
+    @Operation(summary = "Create entities for all unmatched tables in selected database models, linked to a domain")
+    @Loggable
+    public BulkEntityResult bulkCreate(@RequestBody BulkEntityRequest request) {
+        return bulkEntityService.createEntitiesForUnmatchedTables(request);
     }
 
     @DeleteMapping("/{id}")

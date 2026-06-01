@@ -40,6 +40,17 @@ public class DomainDefinition {
     @EqualsAndHashCode.Exclude
     private List<EntityDefinition> entities = new ArrayList<>();
 
+    @ManyToMany
+    @JoinTable(
+        name = "domain_database_model",
+        joinColumns = @JoinColumn(name = "domain_id"),
+        inverseJoinColumns = @JoinColumn(name = "database_model_id")
+    )
+    @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<DatabaseModel> databaseModels = new ArrayList<>();
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

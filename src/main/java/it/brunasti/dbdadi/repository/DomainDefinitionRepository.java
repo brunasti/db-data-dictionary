@@ -13,5 +13,7 @@ public interface DomainDefinitionRepository extends JpaRepository<DomainDefiniti
 
     List<DomainDefinition> findByEntities_Id(Long entityId);
 
+    List<DomainDefinition> findByDatabaseModels_Id(Long databaseModelId);
+
     java.util.Optional<DomainDefinition> findByNameIgnoreCase(String name);
 }

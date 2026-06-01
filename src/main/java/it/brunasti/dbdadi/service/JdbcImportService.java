@@ -173,6 +173,13 @@ public class JdbcImportService {
                 tableMap.put(schemaName + "." + tableName, table);
 
                 importColumns(meta, schemaName, tableName, table, result);
+
+                try {
+                    table.setRowCount(queryRowCount(meta.getConnection(), schemaName, tableName));
+                    tableRepo.save(table);
+                } catch (Exception ex) {
+                    log.warn("Could not get row count for {}.{}: {}", schemaName, tableName, ex.getMessage());
+                }
             }
         }
     }
@@ -324,6 +331,14 @@ public class JdbcImportService {
         if (request.isIncludeViews()) flags.add("includeViews");
         if (request.isOverwrite())    flags.add("overwrite");
         return flags.isEmpty() ? "" : String.join(" - ", flags);
+    }
+
+    long queryRowCount(Connection conn, String schemaName, String tableName) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM \"" + schemaName + "\".\"" + tableName + "\"";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getLong(1) : 0L;
+        }
     }
 
     private String nullIfBlank(String value, String defaultValue) {

@@ -30,7 +30,7 @@ public class AlignmentService {
     private final TableDefinitionRepository tableRepo;
     private final ColumnDefinitionRepository columnRepo;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public AlignmentResult check(AlignmentRequest request) {
         DatabaseModel model = dbModelRepo.findById(request.getDatabaseModelId())
                 .orElseThrow(() -> new RuntimeException("DatabaseModel not found: " + request.getDatabaseModelId()));
@@ -151,6 +151,15 @@ public class AlignmentService {
 
                     columnsChecked += liveColMap.size();
 
+                    // Refresh stored row count
+                    try {
+                        long count = queryRowCount(conn, liveSchema, liveTableName);
+                        storedTable.setRowCount(count);
+                        tableRepo.save(storedTable);
+                    } catch (Exception ex) {
+                        warnings.add("Could not get row count for " + liveSchema + "." + liveTableName + ": " + ex.getMessage());
+                    }
+
                     // Columns removed
                     for (Map.Entry<String, ColumnDefinition> e : storedColMap.entrySet()) {
                         if (!liveColMap.containsKey(e.getKey())) {
@@ -211,6 +220,14 @@ public class AlignmentService {
     }
 
     // Same schema-resolution logic as JdbcImportService
+    private long queryRowCount(Connection conn, String schemaName, String tableName) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM \"" + schemaName + "\".\"" + tableName + "\"";
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            return rs.next() ? rs.getLong(1) : 0L;
+        }
+    }
+
     private List<String> resolveSchemas(DatabaseMetaData meta, String schemaPattern) throws SQLException {
         List<String> schemas = new ArrayList<>();
         String pattern = (schemaPattern == null || schemaPattern.isBlank()) ? null : schemaPattern;

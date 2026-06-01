@@ -33,6 +33,8 @@ public class TableDefinitionDto {
     private Long entityId;
     private String entityName;
 
+    private Long rowCount;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

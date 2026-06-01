@@ -49,6 +49,8 @@ public class TableDefinition {
     @Builder.Default
     private List<RelationshipDefinition> outgoingRelationships = new ArrayList<>();
 
+    private Long rowCount;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

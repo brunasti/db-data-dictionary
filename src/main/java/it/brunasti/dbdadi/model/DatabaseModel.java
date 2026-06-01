@@ -2,6 +2,8 @@ package it.brunasti.dbdadi.model;
 
 import it.brunasti.dbdadi.model.enums.DbType;
 import jakarta.persistence.*;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,6 +56,12 @@ public class DatabaseModel {
     @OneToMany(mappedBy = "databaseModel", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<SchemaDefinition> schemas = new ArrayList<>();
+
+    @ManyToMany(mappedBy = "databaseModels")
+    @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private List<DomainDefinition> domains = new ArrayList<>();
 
     @CreationTimestamp
     @Column(updatable = false)
