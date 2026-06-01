@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.DatabaseModelDto;
 import it.brunasti.dbdadi.model.enums.DbType;
 import it.brunasti.dbdadi.service.DatabaseModelService;
@@ -23,6 +24,7 @@ public class DatabaseModelController {
 
     @GetMapping
     @Operation(summary = "List all database models")
+    @Loggable
     public List<DatabaseModelDto> findAll(
             @RequestParam(required = false) DbType dbType) {
         if (dbType != null) {
@@ -33,6 +35,7 @@ public class DatabaseModelController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get a database model by ID")
+    @Loggable
     public DatabaseModelDto findById(@PathVariable Long id) {
         return service.findById(id);
     }
@@ -40,18 +43,21 @@ public class DatabaseModelController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new database model")
+    @Loggable
     public DatabaseModelDto create(@Valid @RequestBody DatabaseModelDto dto) {
         return service.create(dto);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a database model")
+    @Loggable
     public DatabaseModelDto update(@PathVariable Long id, @Valid @RequestBody DatabaseModelDto dto) {
         return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a database model")
+    @Loggable
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

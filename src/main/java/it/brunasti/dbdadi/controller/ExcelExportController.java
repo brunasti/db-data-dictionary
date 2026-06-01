@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.service.ExcelExportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -24,6 +25,7 @@ public class ExcelExportController {
 
     @GetMapping(value = "/excel", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     @Operation(summary = "Export full data dictionary to Excel (.xlsx)")
+    @Loggable
     public ResponseEntity<byte[]> exportExcel() throws IOException {
         byte[] bytes = service.exportAll();
         String filename = "dbdadi-export-" + LocalDate.now() + ".xlsx";

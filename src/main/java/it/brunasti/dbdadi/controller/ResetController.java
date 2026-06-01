@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,7 @@ public class ResetController {
 
     @DeleteMapping("/database")
     @Operation(summary = "Delete all Database Models, Schemas, Tables, Columns and Relationships")
+    @Loggable
     public ResponseEntity<Void> resetDatabase() {
         relationshipRepo.deleteAll();
         columnRepo.deleteAll();
@@ -36,6 +38,7 @@ public class ResetController {
 
     @DeleteMapping("/modeling")
     @Operation(summary = "Delete all Entities and Attributes")
+    @Loggable
     public ResponseEntity<Void> resetModeling() {
         attributeRepo.deleteAll();
         entityRepo.deleteAll();

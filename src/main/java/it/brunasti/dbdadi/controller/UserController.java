@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.UserDto;
 import it.brunasti.dbdadi.service.UserService;
 import jakarta.validation.Valid;
@@ -22,12 +23,14 @@ public class UserController {
 
     @GetMapping
     @Operation(summary = "List all users")
+    @Loggable
     public List<UserDto> findAll() {
         return service.findAll();
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get a user by ID")
+    @Loggable
     public UserDto findById(@PathVariable Long id) {
         return service.findById(id);
     }
@@ -35,18 +38,21 @@ public class UserController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new user")
+    @Loggable
     public UserDto create(@Valid @RequestBody UserDto dto) {
         return service.create(dto);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a user (omit password to keep existing)")
+    @Loggable
     public UserDto update(@PathVariable Long id, @Valid @RequestBody UserDto dto) {
         return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a user")
+    @Loggable
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

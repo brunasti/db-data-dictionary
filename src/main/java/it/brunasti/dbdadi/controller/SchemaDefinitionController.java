@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.SchemaDefinitionDto;
 import it.brunasti.dbdadi.service.SchemaDefinitionService;
 import jakarta.validation.Valid;
@@ -22,6 +23,7 @@ public class SchemaDefinitionController {
 
     @GetMapping
     @Operation(summary = "List all schemas, optionally filtered by database model")
+    @Loggable
     public List<SchemaDefinitionDto> findAll(
             @RequestParam(required = false) Long databaseModelId) {
         if (databaseModelId != null) {
@@ -32,6 +34,7 @@ public class SchemaDefinitionController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get a schema by ID")
+    @Loggable
     public SchemaDefinitionDto findById(@PathVariable Long id) {
         return service.findById(id);
     }
@@ -39,18 +42,21 @@ public class SchemaDefinitionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new schema definition")
+    @Loggable
     public SchemaDefinitionDto create(@Valid @RequestBody SchemaDefinitionDto dto) {
         return service.create(dto);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a schema definition")
+    @Loggable
     public SchemaDefinitionDto update(@PathVariable Long id, @Valid @RequestBody SchemaDefinitionDto dto) {
         return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a schema definition")
+    @Loggable
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

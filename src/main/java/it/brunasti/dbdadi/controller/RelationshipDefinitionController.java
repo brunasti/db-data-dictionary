@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.RelationshipDefinitionDto;
 import it.brunasti.dbdadi.service.RelationshipDefinitionService;
 import jakarta.validation.Valid;
@@ -22,6 +23,7 @@ public class RelationshipDefinitionController {
 
     @GetMapping
     @Operation(summary = "List all relationships, optionally filtered by fromTableId, toTableId or databaseModelId")
+    @Loggable
     public List<RelationshipDefinitionDto> findAll(
             @RequestParam(required = false) Long fromTableId,
             @RequestParam(required = false) Long toTableId,
@@ -34,6 +36,7 @@ public class RelationshipDefinitionController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get a relationship by ID")
+    @Loggable
     public RelationshipDefinitionDto findById(@PathVariable Long id) {
         return service.findById(id);
     }
@@ -41,18 +44,21 @@ public class RelationshipDefinitionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new relationship definition")
+    @Loggable
     public RelationshipDefinitionDto create(@Valid @RequestBody RelationshipDefinitionDto dto) {
         return service.create(dto);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a relationship definition")
+    @Loggable
     public RelationshipDefinitionDto update(@PathVariable Long id, @Valid @RequestBody RelationshipDefinitionDto dto) {
         return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a relationship definition")
+    @Loggable
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

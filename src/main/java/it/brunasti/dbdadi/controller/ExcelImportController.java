@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.ExcelImportResult;
 import it.brunasti.dbdadi.service.ExcelImportService;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class ExcelImportController {
 
     @PostMapping(value = "/excel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Import full data dictionary from an Excel (.xlsx) file")
+    @Loggable
     public ExcelImportResult importExcel(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "clearBeforeImport", defaultValue = "false") boolean clearBeforeImport)

@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.AnalysisApplyRequest;
 import it.brunasti.dbdadi.dto.AnalysisApplyResult;
 import it.brunasti.dbdadi.dto.AnalysisResult;
@@ -19,12 +20,14 @@ public class AnalysisController {
 
     @PostMapping("/run")
     @Operation(summary = "Analyse all loaded databases and return Entity/Attribute match suggestions")
+    @Loggable
     public AnalysisResult run() {
         return service.analyze();
     }
 
     @PostMapping("/apply")
     @Operation(summary = "Apply selected suggestions: create/link Entities and Attributes")
+    @Loggable
     public AnalysisApplyResult apply(@RequestBody AnalysisApplyRequest request) {
         return service.apply(request);
     }

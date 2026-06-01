@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.ColumnDefinitionDto;
 import it.brunasti.dbdadi.service.ColumnDefinitionService;
 import jakarta.validation.Valid;
@@ -22,6 +23,7 @@ public class ColumnDefinitionController {
 
     @GetMapping
     @Operation(summary = "List all columns, optionally filtered by tableId, schemaId, databaseModelId or attributeId")
+    @Loggable
     public List<ColumnDefinitionDto> findAll(
             @RequestParam(required = false) Long tableId,
             @RequestParam(required = false) Long schemaId,
@@ -36,6 +38,7 @@ public class ColumnDefinitionController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get a column by ID")
+    @Loggable
     public ColumnDefinitionDto findById(@PathVariable Long id) {
         return service.findById(id);
     }
@@ -43,18 +46,21 @@ public class ColumnDefinitionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new column definition")
+    @Loggable
     public ColumnDefinitionDto create(@Valid @RequestBody ColumnDefinitionDto dto) {
         return service.create(dto);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a column definition")
+    @Loggable
     public ColumnDefinitionDto update(@PathVariable Long id, @Valid @RequestBody ColumnDefinitionDto dto) {
         return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a column definition")
+    @Loggable
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

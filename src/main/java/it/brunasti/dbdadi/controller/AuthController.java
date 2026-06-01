@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.LoginRequest;
 import it.brunasti.dbdadi.dto.UserDto;
 import it.brunasti.dbdadi.service.UserService;
@@ -20,6 +21,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Validate credentials and return user info with role")
+    @Loggable
     public ResponseEntity<UserDto> login(@RequestBody LoginRequest request) {
         if (service.validateCredentials(request.getUsername(), request.getPassword())) {
             UserDto dto = service.findRawByUsername(request.getUsername())

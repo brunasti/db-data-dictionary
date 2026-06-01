@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.TableDefinitionDto;
 import it.brunasti.dbdadi.service.TableDefinitionService;
 import jakarta.validation.Valid;
@@ -22,6 +23,7 @@ public class TableDefinitionController {
 
     @GetMapping
     @Operation(summary = "List all tables, optionally filtered by schema, database model or entity")
+    @Loggable
     public List<TableDefinitionDto> findAll(
             @RequestParam(required = false) Long schemaId,
             @RequestParam(required = false) Long databaseModelId,
@@ -40,6 +42,7 @@ public class TableDefinitionController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get a table by ID")
+    @Loggable
     public TableDefinitionDto findById(@PathVariable Long id) {
         return service.findById(id);
     }
@@ -47,18 +50,21 @@ public class TableDefinitionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new table definition")
+    @Loggable
     public TableDefinitionDto create(@Valid @RequestBody TableDefinitionDto dto) {
         return service.create(dto);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a table definition")
+    @Loggable
     public TableDefinitionDto update(@PathVariable Long id, @Valid @RequestBody TableDefinitionDto dto) {
         return service.update(id, dto);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a table definition")
+    @Loggable
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

@@ -2,6 +2,7 @@ package it.brunasti.dbdadi.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.JdbcImportRequest;
 import it.brunasti.dbdadi.dto.JdbcImportResult;
 import it.brunasti.dbdadi.service.JdbcImportService;
@@ -34,6 +35,7 @@ public class JdbcImportController {
                     - DB2 (add db2jcc4 to pom.xml)
                     """
     )
+    @Loggable
     public JdbcImportResult importFromJdbc(@Valid @RequestBody JdbcImportRequest request) {
         return service.importFromJdbc(request);
     }
