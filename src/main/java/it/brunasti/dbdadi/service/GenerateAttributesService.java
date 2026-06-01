@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -36,52 +38,71 @@ public class GenerateAttributesService {
 
         List<TableDefinition> tables = tableRepository.findByEntityId(entityId);
 
-        List<String> createdNames = new ArrayList<>();
-        List<String> warnings = new ArrayList<>();
-        int columnsLinked = 0;
+        // Pass 1: collect all unlinked columns, grouped by lowercase name so that
+        // same-named columns across different tables map to a single attribute.
+        Map<String, List<ColumnDefinition>> columnsByName = new LinkedHashMap<>();
         int columnsAlreadyLinked = 0;
 
         for (TableDefinition table : tables) {
-            List<ColumnDefinition> columns =
-                    columnRepository.findByTableIdOrderByOrdinalPosition(table.getId());
-
-            for (ColumnDefinition col : columns) {
+            for (ColumnDefinition col :
+                    columnRepository.findByTableIdOrderByOrdinalPosition(table.getId())) {
                 if (col.getAttribute() != null) {
                     columnsAlreadyLinked++;
                     continue;
                 }
+                columnsByName
+                        .computeIfAbsent(col.getName().toLowerCase(), k -> new ArrayList<>())
+                        .add(col);
+            }
+        }
 
-                Optional<AttributeDefinition> existing =
-                        attributeRepository.findByNameIgnoreCase(col.getName());
+        // Pass 2: for each unique column name, find or create one attribute and link
+        // every column in that group to it.
+        List<String> createdNames = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
+        int columnsLinked = 0;
 
-                AttributeDefinition attr;
-                if (existing.isPresent()) {
-                    attr = existing.get();
-                    if (attr.getEntity() == null) {
-                        attr.setEntity(entity);
-                        attributeRepository.save(attr);
-                    } else if (!attr.getEntity().getId().equals(entityId)) {
-                        warnings.add("Column '" + table.getName() + "." + col.getName()
-                                + "': attribute already linked to entity '"
-                                + attr.getEntity().getName() + "' — column linked to it anyway.");
-                    }
-                    log.info("Linked column '{}.{}' to existing attribute '{}'",
-                            table.getName(), col.getName(), attr.getName());
-                } else {
-                    attr = AttributeDefinition.builder()
-                            .name(col.getName())
-                            .description(col.getDescription())
-                            .entity(entity)
-                            .build();
+        for (List<ColumnDefinition> group : columnsByName.values()) {
+            String canonicalName = group.get(0).getName(); // preserve original casing
+
+            Optional<AttributeDefinition> existing =
+                    attributeRepository.findByNameIgnoreCase(canonicalName);
+
+            AttributeDefinition attr;
+            if (existing.isPresent()) {
+                attr = existing.get();
+                if (attr.getEntity() == null) {
+                    attr.setEntity(entity);
                     attributeRepository.save(attr);
-                    createdNames.add(attr.getName());
-                    log.info("Created attribute '{}' for column '{}.{}'",
-                            attr.getName(), table.getName(), col.getName());
+                } else if (!attr.getEntity().getId().equals(entityId)) {
+                    warnings.add("Attribute '" + canonicalName + "' already belongs to entity '"
+                            + attr.getEntity().getName() + "' — columns linked to it anyway.");
                 }
+            } else {
+                // Use the description from the first column that has one
+                String description = group.stream()
+                        .map(ColumnDefinition::getDescription)
+                        .filter(d -> d != null && !d.isBlank())
+                        .findFirst()
+                        .orElse(null);
+                attr = AttributeDefinition.builder()
+                        .name(canonicalName)
+                        .description(description)
+                        .entity(entity)
+                        .build();
+                attributeRepository.save(attr);
+                createdNames.add(canonicalName);
+                log.info("Created attribute '{}' covering {} column(s)", canonicalName, group.size());
+            }
 
+            for (ColumnDefinition col : group) {
                 col.setAttribute(attr);
                 columnRepository.save(col);
                 columnsLinked++;
+                log.info("Linked column '{}' (table '{}') → attribute '{}'",
+                        col.getName(),
+                        col.getTable() != null ? col.getTable().getName() : "?",
+                        attr.getName());
             }
         }
 
