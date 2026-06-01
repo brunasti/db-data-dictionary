@@ -7,8 +7,13 @@ import it.brunasti.dbdadi.dto.BulkEntityRequest;
 import it.brunasti.dbdadi.dto.BulkEntityResult;
 import it.brunasti.dbdadi.dto.DomainDefinitionDto;
 import it.brunasti.dbdadi.dto.EntityDefinitionDto;
+import it.brunasti.dbdadi.dto.GenerateAttributesResult;
+import it.brunasti.dbdadi.dto.MergeEntityRequest;
+import it.brunasti.dbdadi.dto.MergeEntityResult;
 import it.brunasti.dbdadi.service.BulkEntityService;
 import it.brunasti.dbdadi.service.EntityDefinitionService;
+import it.brunasti.dbdadi.service.GenerateAttributesService;
+import it.brunasti.dbdadi.service.MergeEntityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +30,8 @@ public class EntityDefinitionController {
 
     private final EntityDefinitionService service;
     private final BulkEntityService bulkEntityService;
+    private final MergeEntityService mergeEntityService;
+    private final GenerateAttributesService generateAttributesService;
 
     @GetMapping
     @Operation(summary = "List all entity definitions, optionally filtered by domain")
@@ -78,6 +85,20 @@ public class EntityDefinitionController {
     @Loggable
     public BulkEntityResult bulkCreate(@RequestBody BulkEntityRequest request) {
         return bulkEntityService.createEntitiesForUnmatchedTables(request);
+    }
+
+    @PostMapping("/merge")
+    @Operation(summary = "Merge source entity into target: migrate attributes, tables and domain links, then delete source")
+    @Loggable
+    public MergeEntityResult merge(@RequestBody MergeEntityRequest request) {
+        return mergeEntityService.merge(request);
+    }
+
+    @PostMapping("/{id}/generate-attributes")
+    @Operation(summary = "Generate attributes from all unlinked columns of tables connected to this entity")
+    @Loggable
+    public GenerateAttributesResult generateAttributes(@PathVariable Long id) {
+        return generateAttributesService.generateForEntity(id);
     }
 
     @DeleteMapping("/{id}")

@@ -4,7 +4,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.AttributeDefinitionDto;
+import it.brunasti.dbdadi.dto.AttributeEntitySuggestion;
+import it.brunasti.dbdadi.dto.MergeAttributeRequest;
+import it.brunasti.dbdadi.dto.MergeAttributeResult;
 import it.brunasti.dbdadi.service.AttributeDefinitionService;
+import it.brunasti.dbdadi.service.MergeAttributeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +24,7 @@ import java.util.List;
 public class AttributeDefinitionController {
 
     private final AttributeDefinitionService service;
+    private final MergeAttributeService mergeService;
 
     @GetMapping
     @Operation(summary = "List all attribute definitions")
@@ -50,6 +55,20 @@ public class AttributeDefinitionController {
     @Loggable
     public AttributeDefinitionDto update(@PathVariable Long id, @Valid @RequestBody AttributeDefinitionDto dto) {
         return service.update(id, dto);
+    }
+
+    @PostMapping("/merge")
+    @Operation(summary = "Merge two attributes: move all column links from source to target, then delete source")
+    @Loggable
+    public MergeAttributeResult merge(@RequestBody MergeAttributeRequest request) {
+        return mergeService.merge(request);
+    }
+
+    @GetMapping("/{id}/suggested-entities")
+    @Operation(summary = "Suggest entities to link to this attribute, based on the tables of its linked columns")
+    @Loggable
+    public List<AttributeEntitySuggestion> suggestEntities(@PathVariable Long id) {
+        return service.suggestEntities(id);
     }
 
     @DeleteMapping("/{id}")
