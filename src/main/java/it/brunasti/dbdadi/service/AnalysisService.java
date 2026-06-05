@@ -275,7 +275,9 @@ public class AnalysisService {
                     .build());
         }
 
-        return new ArrayList<>(byKey.values());
+        return byKey.values().stream()
+                .filter(s -> s.getExistingAssociationId() == null)
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     private AnalysisEntitySuggestion buildEntitySuggestion(String normName, List<TableDefinition> tables) {
