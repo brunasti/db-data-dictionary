@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.AssociationDto;
+import it.brunasti.dbdadi.dto.GenerateAssociationsResult;
 import it.brunasti.dbdadi.service.AssociationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,13 @@ public class AssociationController {
     @Loggable
     public AssociationDto update(@PathVariable Long id, @Valid @RequestBody AssociationDto dto) {
         return service.update(id, dto);
+    }
+
+    @PostMapping("/generate-from-relations")
+    @Operation(summary = "Generate associations from physical relationships between tables of entities in a domain")
+    @Loggable
+    public GenerateAssociationsResult generateFromRelations(@RequestParam Long domainId) {
+        return service.generateFromDomain(domainId);
     }
 
     @DeleteMapping("/{id}")

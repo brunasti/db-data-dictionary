@@ -15,6 +15,7 @@ public class AnalysisResult {
 
     private List<AnalysisEntitySuggestion> entitySuggestions;
     private List<AnalysisAttributeSuggestion> attributeSuggestions;
+    private List<AnalysisAssociationSuggestion> associationSuggestions;
     private int tablesAnalyzed;
     private int columnsAnalyzed;
 }

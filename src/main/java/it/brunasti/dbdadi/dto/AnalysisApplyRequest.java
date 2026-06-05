@@ -15,5 +15,6 @@ public class AnalysisApplyRequest {
 
     private List<AnalysisEntitySuggestion> entities;
     private List<AnalysisAttributeSuggestion> attributes;
+    private List<AnalysisAssociationSuggestion> associations;
     private String domainName; // optional: link entities to this domain (created if it doesn't exist)
 }

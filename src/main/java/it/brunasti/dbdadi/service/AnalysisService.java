@@ -20,6 +20,8 @@ public class AnalysisService {
     private final EntityDefinitionRepository entityRepository;
     private final AttributeDefinitionRepository attributeRepository;
     private final DomainDefinitionRepository domainRepository;
+    private final RelationshipDefinitionRepository relationshipRepository;
+    private final AssociationRepository associationRepository;
 
     public AnalysisResult analyze() {
         List<TableDefinition> allTables = tableRepository.findAll();
@@ -89,9 +91,12 @@ public class AnalysisService {
                 .map(e -> buildAttributeSuggestion("", e.getKey(), e.getValue()))
                 .forEach(attributeSuggestions::add);
 
+        List<AnalysisAssociationSuggestion> associationSuggestions = buildAssociationSuggestions();
+
         return AnalysisResult.builder()
                 .entitySuggestions(entitySuggestions)
                 .attributeSuggestions(attributeSuggestions)
+                .associationSuggestions(associationSuggestions)
                 .tablesAnalyzed(allTables.size())
                 .columnsAnalyzed(allUnlinkedColumns.size())
                 .build();
@@ -196,6 +201,29 @@ public class AnalysisService {
             }
         }
 
+        int associationsCreated = 0, associationsReused = 0;
+        for (AnalysisAssociationSuggestion suggestion : orEmpty(request.getAssociations())) {
+            if (suggestion.getExistingAssociationId() != null) {
+                associationsReused++;
+                continue;
+            }
+            EntityDefinition fromEntity = entityRepository.findById(suggestion.getFromEntityId()).orElse(null);
+            EntityDefinition toEntity = entityRepository.findById(suggestion.getToEntityId()).orElse(null);
+            if (fromEntity == null || toEntity == null) continue;
+            if (associationRepository.findByFromEntityIdAndToEntityIdAndType(
+                    fromEntity.getId(), toEntity.getId(), suggestion.getType()).isPresent()) {
+                associationsReused++;
+                continue;
+            }
+            associationRepository.save(Association.builder()
+                    .name(suggestion.getSuggestedName())
+                    .type(suggestion.getType())
+                    .fromEntity(fromEntity)
+                    .toEntity(toEntity)
+                    .build());
+            associationsCreated++;
+        }
+
         return AnalysisApplyResult.builder()
                 .entitiesCreated(entitiesCreated)
                 .entitiesReused(entitiesReused)
@@ -203,10 +231,52 @@ public class AnalysisService {
                 .attributesCreated(attributesCreated)
                 .attributesReused(attributesReused)
                 .columnsLinked(columnsLinked)
+                .associationsCreated(associationsCreated)
+                .associationsReused(associationsReused)
                 .build();
     }
 
     // -------------------------------------------------------------------------
+
+    private List<AnalysisAssociationSuggestion> buildAssociationSuggestions() {
+        List<RelationshipDefinition> allRelationships = relationshipRepository.findAll();
+        Map<String, AnalysisAssociationSuggestion> byKey = new LinkedHashMap<>();
+
+        for (RelationshipDefinition rel : allRelationships) {
+            EntityDefinition fromEntity = rel.getFromTable().getEntity();
+            EntityDefinition toEntity = rel.getToTable().getEntity();
+            if (fromEntity == null || toEntity == null) continue;
+
+            String key = fromEntity.getId() + "_" + rel.getType().name() + "_" + toEntity.getId();
+            String label = rel.getFromTable().getSchema().getDatabaseModel().getName()
+                    + " / " + rel.getFromTable().getName()
+                    + " → " + rel.getToTable().getName();
+
+            if (byKey.containsKey(key)) {
+                byKey.get(key).getRelationshipLabels().add(label);
+                continue;
+            }
+
+            Long existingId = associationRepository
+                    .findByFromEntityIdAndToEntityIdAndType(fromEntity.getId(), toEntity.getId(), rel.getType())
+                    .map(Association::getId).orElse(null);
+
+            List<String> labels = new ArrayList<>();
+            labels.add(label);
+            byKey.put(key, AnalysisAssociationSuggestion.builder()
+                    .suggestedName(fromEntity.getName() + "-" + toEntity.getName())
+                    .type(rel.getType())
+                    .fromEntityId(fromEntity.getId())
+                    .fromEntityName(fromEntity.getName())
+                    .toEntityId(toEntity.getId())
+                    .toEntityName(toEntity.getName())
+                    .existingAssociationId(existingId)
+                    .relationshipLabels(labels)
+                    .build());
+        }
+
+        return new ArrayList<>(byKey.values());
+    }
 
     private AnalysisEntitySuggestion buildEntitySuggestion(String normName, List<TableDefinition> tables) {
         Long existingId = entityRepository.findByNameIgnoreCase(normName)
