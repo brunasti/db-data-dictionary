@@ -8,6 +8,7 @@ import it.brunasti.dbdadi.model.EntityDefinition;
 import it.brunasti.dbdadi.model.TableDefinition;
 import it.brunasti.dbdadi.repository.AttributeDefinitionRepository;
 import it.brunasti.dbdadi.repository.ColumnDefinitionRepository;
+import it.brunasti.dbdadi.repository.DomainDefinitionRepository;
 import it.brunasti.dbdadi.repository.EntityDefinitionRepository;
 import it.brunasti.dbdadi.repository.TableDefinitionRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class GenerateAttributesService {
     private final TableDefinitionRepository tableRepository;
     private final ColumnDefinitionRepository columnRepository;
     private final AttributeDefinitionRepository attributeRepository;
+    private final DomainDefinitionRepository domainRepository;
 
     @Transactional
     public GenerateAttributesResult generateForEntity(Long entityId) {
@@ -112,6 +114,37 @@ public class GenerateAttributesService {
                 .columnsAlreadyLinked(columnsAlreadyLinked)
                 .createdNames(createdNames)
                 .warnings(warnings)
+                .build();
+    }
+
+    @Transactional
+    public GenerateAttributesResult generateForDomain(Long domainId) {
+        domainRepository.findById(domainId)
+                .orElseThrow(() -> new ResourceNotFoundException("DomainDefinition", domainId));
+
+        List<EntityDefinition> entities = entityRepository.findByDomains_Id(domainId);
+
+        int totalAttributesCreated = 0;
+        int totalColumnsLinked = 0;
+        int totalColumnsAlreadyLinked = 0;
+        List<String> allCreatedNames = new ArrayList<>();
+        List<String> allWarnings = new ArrayList<>();
+
+        for (EntityDefinition entity : entities) {
+            GenerateAttributesResult entityResult = generateForEntity(entity.getId());
+            totalAttributesCreated += entityResult.getAttributesCreated();
+            totalColumnsLinked += entityResult.getColumnsLinked();
+            totalColumnsAlreadyLinked += entityResult.getColumnsAlreadyLinked();
+            if (entityResult.getCreatedNames() != null) allCreatedNames.addAll(entityResult.getCreatedNames());
+            if (entityResult.getWarnings() != null) allWarnings.addAll(entityResult.getWarnings());
+        }
+
+        return GenerateAttributesResult.builder()
+                .attributesCreated(totalAttributesCreated)
+                .columnsLinked(totalColumnsLinked)
+                .columnsAlreadyLinked(totalColumnsAlreadyLinked)
+                .createdNames(allCreatedNames)
+                .warnings(allWarnings)
                 .build();
     }
 }

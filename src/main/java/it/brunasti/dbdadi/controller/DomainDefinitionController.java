@@ -6,7 +6,9 @@ import it.brunasti.dbdadi.aspect.Loggable;
 import it.brunasti.dbdadi.dto.DatabaseModelDto;
 import it.brunasti.dbdadi.dto.DomainDefinitionDto;
 import it.brunasti.dbdadi.dto.EntityDefinitionDto;
+import it.brunasti.dbdadi.dto.GenerateAttributesResult;
 import it.brunasti.dbdadi.service.DomainDefinitionService;
+import it.brunasti.dbdadi.service.GenerateAttributesService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import java.util.List;
 public class DomainDefinitionController {
 
     private final DomainDefinitionService service;
+    private final GenerateAttributesService generateAttributesService;
 
     @GetMapping
     @Operation(summary = "List all domains, optionally filtered by entity or database model")
@@ -84,6 +87,13 @@ public class DomainDefinitionController {
     public ResponseEntity<Void> setDatabaseModels(@PathVariable Long id, @RequestBody List<Long> dbModelIds) {
         service.setDatabaseModels(id, dbModelIds);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/generate-attributes")
+    @Operation(summary = "Generate attributes from columns for all entities in a domain")
+    @Loggable
+    public GenerateAttributesResult generateAttributes(@PathVariable Long id) {
+        return generateAttributesService.generateForDomain(id);
     }
 
     @DeleteMapping("/{id}")
