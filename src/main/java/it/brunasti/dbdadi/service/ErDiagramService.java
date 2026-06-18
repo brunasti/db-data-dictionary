@@ -2,12 +2,18 @@ package it.brunasti.dbdadi.service;
 
 import it.brunasti.dbdadi.exception.ResourceNotFoundException;
 import it.brunasti.dbdadi.model.*;
+import net.sourceforge.plantuml.FileFormat;
+import net.sourceforge.plantuml.FileFormatOption;
+import net.sourceforge.plantuml.SourceStringReader;
 import it.brunasti.dbdadi.model.enums.RelationshipType;
 import it.brunasti.dbdadi.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -113,6 +119,29 @@ public class ErDiagramService {
 
         sb.append("@enduml\n");
         return sb.toString();
+    }
+
+    // -------------------------------------------------------------------------
+    // Render PlantUML source to SVG
+    // -------------------------------------------------------------------------
+
+    public String generateSvg(Long domainId) {
+        return renderToSvg(generate(domainId));
+    }
+
+    public String generateSvgForSchema(Long schemaId) {
+        return renderToSvg(generateForSchema(schemaId));
+    }
+
+    private String renderToSvg(String plantuml) {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            new SourceStringReader(plantuml).outputImage(out, new FileFormatOption(FileFormat.SVG));
+            String raw = out.toString(StandardCharsets.UTF_8);
+            int svgStart = raw.indexOf("<svg");
+            return svgStart >= 0 ? raw.substring(svgStart) : raw;
+        } catch (IOException e) {
+            throw new RuntimeException("SVG generation failed", e);
+        }
     }
 
     // -------------------------------------------------------------------------

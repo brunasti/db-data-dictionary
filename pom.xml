@@ -89,6 +89,13 @@
             <version>5.3.0</version>
         </dependency>
 
+        <!-- PlantUML - server-side SVG rendering -->
+        <dependency>
+            <groupId>net.sourceforge.plantuml</groupId>
+            <artifactId>plantuml</artifactId>
+            <version>1.2024.7</version>
+        </dependency>
+
         <!-- Spring Boot Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

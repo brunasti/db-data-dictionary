@@ -22,10 +22,24 @@ public class ErDiagramController {
         return service.generate(domainId);
     }
 
+    @GetMapping(value = "/svg", produces = "image/svg+xml;charset=UTF-8")
+    @Operation(summary = "Render a domain ER diagram as SVG; optionally filtered to a single domain")
+    @Loggable
+    public String generateSvg(@RequestParam(required = false) Long domainId) {
+        return service.generateSvg(domainId);
+    }
+
     @GetMapping(value = "/schema/{schemaId}", produces = "text/plain;charset=UTF-8")
     @Operation(summary = "Generate a PlantUML physical ER diagram for a schema (tables, columns, relationships)")
     @Loggable
     public String generateForSchema(@PathVariable Long schemaId) {
         return service.generateForSchema(schemaId);
+    }
+
+    @GetMapping(value = "/schema/{schemaId}/svg", produces = "image/svg+xml;charset=UTF-8")
+    @Operation(summary = "Render a physical ER diagram as SVG for a schema")
+    @Loggable
+    public String generateSvgForSchema(@PathVariable Long schemaId) {
+        return service.generateSvgForSchema(schemaId);
     }
 }
